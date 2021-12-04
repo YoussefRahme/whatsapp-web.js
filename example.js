@@ -8,6 +8,7 @@ if (fs.existsSync(SESSION_FILE_PATH)) {
 }
 
 const client = new Client({ puppeteer: { headless: false }, session: sessionCfg });
+console.log(client)
 // You can use an existing session and avoid scanning a QR code by adding a "session" object to the client options.
 // This object must include WABrowserId, WASecretBundle, WAToken1 and WAToken2.
 
@@ -27,7 +28,7 @@ client.on('qr', (qr) => {
 
 client.on('authenticated', (session) => {
     console.log('AUTHENTICATED', session);
-    sessionCfg=session;
+    sessionCfg = session;
     fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
         if (err) {
             console.error(err);
@@ -38,6 +39,12 @@ client.on('authenticated', (session) => {
 client.on('auth_failure', msg => {
     // Fired if session restore was unsuccessfull
     console.error('AUTHENTICATION FAILURE', msg);
+    fs.unlink(SESSION_FILE_PATH, (err) => {
+        if (err) {
+            console.log(err);
+        }
+        console.log("session file deleted.");
+    })
 });
 
 client.on('ready', () => {
@@ -121,6 +128,7 @@ client.on('message', async msg => {
         client.sendMessage(msg.from, `The bot has ${chats.length} chats open.`);
     } else if (msg.body === '!info') {
         let info = client.info;
+        console.log(info)
         client.sendMessage(msg.from, `
             *Connection info*
             User name: ${info.pushname}
@@ -205,11 +213,11 @@ client.on('message', async msg => {
             client.interface.openChatWindowAt(quotedMsg.id._serialized);
         }
     } else if (msg.body === '!buttons') {
-        let button = new Buttons('Button body',[{body:'bt1'},{body:'bt2'},{body:'bt3'}],'title','footer');
+        let button = new Buttons('Button body', [{ body: 'bt1' }, { body: 'bt2' }, { body: 'bt3' }], 'title', 'footer');
         client.sendMessage(msg.from, button);
     } else if (msg.body === '!list') {
-        let sections = [{title:'sectionTitle',rows:[{title:'ListItem1', description: 'desc'},{title:'ListItem2'}]}];
-        let list = new List('List body','btnText',sections,'Title','footer');
+        let sections = [{ title: 'sectionTitle', rows: [{ title: 'ListItem1', description: 'desc' }, { title: 'ListItem2' }] }];
+        let list = new List('List body', 'btnText', sections, 'Title', 'footer');
         client.sendMessage(msg.from, list);
     }
 });
@@ -217,6 +225,8 @@ client.on('message', async msg => {
 client.on('message_create', (msg) => {
     // Fired on all message creations, including your own
     if (msg.fromMe) {
+        console.log(msg.body);
+
         // do stuff here
     }
 });
@@ -245,7 +255,7 @@ client.on('message_ack', (msg, ack) => {
         ACK_PLAYED: 4
     */
 
-    if(ack == 3) {
+    if (ack == 3) {
         // The message was read
     }
 });
@@ -270,11 +280,13 @@ client.on('group_update', (notification) => {
 client.on('change_battery', (batteryInfo) => {
     // Battery percentage for attached device has changed
     const { battery, plugged } = batteryInfo;
+    console.log(batteryInfo.battery)
+
     console.log(`Battery: ${battery}% - Charging? ${plugged}`);
 });
 
 client.on('change_state', state => {
-    console.log('CHANGE STATE', state );
+    console.log('CHANGE STATE', state);
 });
 
 client.on('disconnected', (reason) => {
